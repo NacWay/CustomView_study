@@ -2,17 +2,19 @@ package com.study.spin_the_drum
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
-import android.preference.PreferenceManager
+import android.os.Handler
+import android.os.Looper
 import android.util.AttributeSet
-import android.view.MotionEvent
 import android.view.View
+import android.widget.ImageView
 import androidx.core.content.ContextCompat
-
+import androidx.core.view.ViewCompat
 
 
 class MyCustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) {
@@ -24,12 +26,9 @@ class MyCustomView(context: Context, attrs: AttributeSet?) : View(context, attrs
     private val paintLightblue = Paint()
     private val paintBlue = Paint()
     private val paintPurple = Paint()
+    var clickListener: ((String) -> Unit?)? = null
 
-
-    @SuppressLint("ResourceAsColor", "DrawAllocation")
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-
+    init {
         // Устанавливаем цвет и стиль для Секторов
         //RED
         paintRed.color = Color.RED
@@ -52,6 +51,41 @@ class MyCustomView(context: Context, attrs: AttributeSet?) : View(context, attrs
         //PURPLE
         paintPurple.color = ContextCompat.getColor(context, R.color.purple)
         paintPurple.style = Paint.Style.FILL
+
+            setOnClickListener {
+
+                val rotationCount: Float =
+                    (500 + Math.random() * 3000).toFloat()  //рандомное число кручения барабана
+                var sectorPosition: Int =
+                    0                                        //позиция после кручения
+
+                //Крутим барабан
+                ViewCompat.animate(it)
+                    .rotation(-rotationCount)
+                    .setDuration(4000)
+                    .start()
+
+                Handler(Looper.getMainLooper()).postDelayed(        //немного замедляем поток чтобы показать результат кручения барабана после анимации
+                    {
+                        //расчет позиции
+                        sectorPosition =
+                            ((rotationCount.toDouble() / 360).toString().substringAfterLast('.')
+                                .substring(0, 4).toDouble() / 10000 * 360).toInt()
+
+
+                        clickListener?.invoke(findSelectedSector(sectorPosition))
+
+
+                    }, 4010
+                )
+            }
+    }
+
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+
+
 
         // Рисуем Сектора
         canvas.drawArc(
@@ -103,7 +137,17 @@ class MyCustomView(context: Context, attrs: AttributeSet?) : View(context, attrs
             true,
             paintPurple
         )
-
-
+    }
+    private fun findSelectedSector(sectorPositin: Int): String{
+        when {
+            sectorPositin in 0..51 -> return "Приз: Стиральная машина"
+            sectorPositin in 52..102 -> return "ORANGE"
+            sectorPositin in 103..153 -> return "Приз: Шапка из оленя"
+            sectorPositin in 154..204 -> return "GREEN"
+            sectorPositin in 205..255 -> return "Приз: Ведро кортошки"
+            sectorPositin in 256..306 -> return "BLUE"
+            sectorPositin in 307..360 -> return "Главный приз: Автомобиль"
+        }
+        return "Барабан улетел"
     }
 }
